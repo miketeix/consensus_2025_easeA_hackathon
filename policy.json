@@ -1,0 +1,19 @@
+{
+  "Policy": "Test Policy",
+  "Trackers": [
+    {
+      "name": "trackerOne",
+      "type": "uint256",
+      "defaultValue": 1
+    }
+  ],
+  "RulesJSON": [
+    {
+      "condition": "value >= 10000",
+      "positiveEffects": ["revert(\"Passed test\")"],
+      "negativeEffects": ["revert(\"Failed test\")"],
+      "functionSignature": "transfer(address to, uint256 value)",
+      "encodedValues": "address to, uint256 value"
+    }
+  ]
+}

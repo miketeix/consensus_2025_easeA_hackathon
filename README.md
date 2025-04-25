@@ -1,66 +1,80 @@
-## Foundry
+## Forte Rules Engine Quickstart
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
-
-Foundry consists of:
-
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
-
-## Documentation
-
-https://book.getfoundry.sh/
-
-## Usage
-
-### Build
+clone this repo
 
 ```shell
-$ forge build
+cd fre-quickstart
+npm install
+forge install
 ```
 
-### Test
+### Start up local anvil chain
 
-```shell
-$ forge test
+```bash
+anvil --load-state anvilState.json
 ```
 
-### Format
+### Setup Environment
 
-```shell
-$ forge fmt
+```yaml
+# local anvil RPC, change this if you're deploying to a network
+RPC_URL=http://127.0.0.1:8545
+# local anvil account private key, change to your deployer wallet key when using a live network
+PRIV_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+# base-sepolia address of the rules engine
+RULES_ENGINE_ADDRESS=0x0165878A594ca255338adfa4d48449f69242Eb8F
 ```
 
-### Gas Snapshots
-
-```shell
-$ forge snapshot
+```bash
+source .env
 ```
 
-### Anvil
+### Create Policy on Rules Engine
 
-```shell
-$ anvil
+```bash
+npx tsx index.ts
 ```
 
-### Deploy
+### Deploy Example Contract
 
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
+```bash
+forge script script/ExampleContract.s.sol --ffi --broadcast -vvv --non-interactive --rpc-url $RPC_URL --private-key $PRIV_KEY
 ```
 
-### Cast
+Note the contract address, add it to your `.env` file and re-run the source command:
 
-```shell
-$ cast <subcommand>
+```yaml
+CONTRACT_ADDRESS=0xYourContractAddress
 ```
 
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
 ```
+source .env
+```
+
+### Set Rules Engine Address
+
+```bash
+cast send $CONTRACT_ADDRESS "setRulesEngineAddress(address)" $RULES_ENGINE_ADDRESS --rpc-url $RPC_URL --private-key $PRIV_KEY
+```
+
+### Apply the Policy
+
+```bash
+npx tsx index.ts apply 1 $CONTRACT_ADDRESS
+```
+
+### Test Success Condition
+
+```bash
+cast send $CONTRACT_ADDRESS "transfer(address,uint256)" 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 10001 --rpc-url $RPC_URL --private-key $PRIV_KEY
+```
+
+You should receive a revert with the text "Passed Test"
+
+### Test Failure Condition
+
+```bash
+cast send $CONTRACT_ADDRESS "transfer(address,uint256)" 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 9999 --rpc-url $RPC_URL --private-key $PRIV_KEY
+```
+
+You should receive a revert with the text "Failed Test"
