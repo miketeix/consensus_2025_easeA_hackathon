@@ -4,10 +4,10 @@ import {
   createFullPolicy,
   retrieveFullPolicy,
   //} from "@thrackle-io/forte-rules-engine-sdk";
-} from "../aquifi-rules-sdk/src/index";
-import { applyPolicy } from "../aquifi-rules-sdk/src/modules/ContractInteraction";
+} from "@thrackle-io/forte-rules-engine-sdk/src/index";
+import { applyPolicy } from "@thrackle-io/forte-rules-engine-sdk/src/modules/ContractInteraction";
 
-import { getConfig, connectConfig } from "../aquifi-rules-sdk/config";
+import { getConfig, connectConfig } from "./config";
 import { getAddress } from "viem";
 
 // Hardcoded address of the diamond in diamondDeployedAnvilState.json
