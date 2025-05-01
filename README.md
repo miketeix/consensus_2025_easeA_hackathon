@@ -1,33 +1,52 @@
-** UNDER DEVELOPMENT **
+# Forte Rules Engine Quickstart (UNDER DEVELOPMENT)
 
----
+This repository will guide you through using the Forte Rules Engine in a local [anvil](https://book.getfoundry.sh/anvil/) devlopment environement. Theis guide will go over:
 
-## Forte Rules Engine Quickstart
+1. Environment dependencies
+2. Building
+3. Configuring your environment
+4. Starting a local Anvil instance
+5. Creating a sample policy in the Rules Engine
+6. Integrating the Rules Engine into a sample contract & deploying it locally
+7. Applying the policy to the sample contract and verifying functionality
 
-clone this repo
+> **_NOTE:_** This guide was developed in a MacOS environment, some modification may be necessary to suit a Linux/Windows environment.
+
+## Environment dependencies
+
+This guide assumes the following tools are installed and configured correctly. Please see each tool's installation instructions for more details:
+
+- [Git](https://git-scm.com/)
+- [NodeJS](https://nodejs.org/)
+- [Foundry](https://book.getfoundry.sh/getting-started/installation) (contains anvil/forge)
+
+## Building
+
+Clone this repository and navigate to the repository in your local shell. To build the repository, run the following commands:
 
 ```shell
-cd fre-quickstart
 npm install
 forge install
 ```
 
-### Start up local anvil chain
+## Configure your local environment
+Set the following environment variables. 
+```yaml
+# local anvil RPC, change this if you're deploying to a network
+RPC_URL=http://127.0.0.1:8545
+# local anvil account private key, change to your deployer wallet key when using a live network
+PRIV_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+# address of the rules engine within the anvil state file
+RULES_ENGINE_ADDRESS=0x0165878A594ca255338adfa4d48449f69242Eb8F
+```
+
+## Start a local Anvil chain
 
 ```bash
 anvil --load-state anvilState.json
 ```
 
 ### Setup Environment
-
-```yaml
-# local anvil RPC, change this if you're deploying to a network
-RPC_URL=http://127.0.0.1:8545
-# local anvil account private key, change to your deployer wallet key when using a live network
-PRIV_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
-# base-sepolia address of the rules engine
-RULES_ENGINE_ADDRESS=0x0165878A594ca255338adfa4d48449f69242Eb8F
-```
 
 ```bash
 source .env
@@ -36,7 +55,7 @@ source .env
 ### Create Policy on Rules Engine
 
 ```bash
-npx tsx index.ts
+npx tsx index.ts setupPolicy
 ```
 
 ### Deploy Example Contract

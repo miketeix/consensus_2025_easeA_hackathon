@@ -1,7 +1,14 @@
 {
-  "name": "y",
+  "name": "forte-rules-engine-quickstart",
   "version": "1.0.0",
-  "description": "**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**",
+  "description": "A quickstart project for utilizing the Forte Rules Engine through the SDK.",
+  "keywords": [
+    "forte",
+    "rules-engine",
+    "sdk",
+    "quickstart",
+    "typescript"
+  ],
   "main": "index.js",
   "directories": {
     "lib": "lib",
@@ -11,9 +18,10 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
-  "license": "ISC",
+  "license": "UNLICENSED",
   "dependencies": {
-    "@thrackle-io/forte-rules-engine-sdk": "^0.0.1"
+    "@thrackle-io/forte-rules-engine-sdk": "^0.0.2-rc.1",
+    "viem": "^2.28.1"
   },
   "devDependencies": {
     "@types/node": "^22.15.0"

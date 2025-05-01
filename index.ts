@@ -1,94 +1,114 @@
-import {
-  getRulesEnginePolicyContract,
-  getRulesEngineComponentContract,
-  createFullPolicy,
-  retrieveFullPolicy,
-  //} from "@thrackle-io/forte-rules-engine-sdk";
-} from "@thrackle-io/forte-rules-engine-sdk/src/index";
-import { applyPolicy } from "@thrackle-io/forte-rules-engine-sdk/src/modules/ContractInteraction";
-
-import { getConfig, connectConfig } from "./config";
-import { getAddress } from "viem";
+import { initializeRulesEngineConnection, createPolicy, getPolicy } from "../forte-rules-engine-sdk";
+// import { createPolicy, getPolicy } from "@thrackle-io/forte-rules-engine-sdk";
+import * as fs from "fs";
+import { getConfig, connectConfig } from "@thrackle-io/forte-rules-engine-sdk/config";
+import { Address, getAddress } from "viem";
+import { simulateContract } from "@wagmi/core";
 
 // Hardcoded address of the diamond in diamondDeployedAnvilState.json
-const DiamondAddress: `0x${string}` = `0x0165878A594ca255338adfa4d48449f69242Eb8F`;
-
+const RULES_ENGINE_ADDRESS: Address = getAddress(`0x0165878A594ca255338adfa4d48449f69242Eb8F`);
 const config = getConfig();
-
 const client = config.getClient({ chainId: config.chains[0].id });
 
-const policyJSON = {
-  Policy: "Test Policy",
-  ForeignCalls: [
-    {
-      name: "testSig(address)",
-      address: "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
-      signature: "testSig(address)",
-      returnType: "uint256",
-      parameterTypes: "address",
-      encodedIndices: "0",
-    },
-  ],
-  Trackers: [
-    {
-      name: "trackerOne",
-      type: "uint256",
-      defaultValue: 1,
-    },
-  ],
-  RulesJSON: [
-    {
-      condition: "value > 10000",
-      positiveEffects: ['revert("Passed test")'],
-      negativeEffects: ['revert("Failed test")'],
-      functionSignature: "transfer(address to, uint256 value)",
-      encodedValues: "address to, uint256 value",
-    },
-  ],
-};
+async function setupPolicy(policyData: string): Promise<number> {
+  initializeRulesEngineConnection(RULES_ENGINE_ADDRESS, client);
+  // Create a new policy
+  const policyId: number = await createPolicy(policyData);
+  validatePolicyId(policyId);
+  // Get the policy to make sure it was created correctly
+  //const createdPolicyData = await getPolicy(policyId);
+  //console.log(`Policy ${policyId} created: `, createdPolicyData);
+  return policyId;
+}
+
+async function injectModifiers(policyId: number, sourceContractFile: string, destinationModifierFile: string) {
+  // Create modifiers and inject them into the contract
+  // const modifiers = await createModifiers(policyId, sourceContractFile, destinationModifierFile);
+  // console.log("Modifiers created: ", modifiers); // TODO does this return anything?
+}
+
+async function applyPolicy(policyId: number, callingContractAddress: Address) {
+  validatePolicyId(policyId);
+
+  // Apply the policy to the contract
+  const result = await applyPolicy(policyId, callingContractAddress);
+  console.log("Policy applied. Result: ", result);
+}
+
+// Test a transaction to show the policy is not applied (expected success+failure cases)
+async function testTransaction() {
+  // Test a transaction to show the policy is not applied
+  // await simulateContract(config, {
+  //   address: RULES_ENGINE.address,
+  //   abi: RULES_ENGINE.abi,
+  //   functionName: "applyPolicy",
+  //   args: [contractAddressForPolicy, [policyId]],
+  // });
+}
+
+function validatePolicyId(policyId: number): boolean {
+  // Check if the policy ID is a valid number
+  if (isNaN(policyId) || policyId <= 0) {
+    throw new Error(`Invalid policy ID: ${policyId}. The policy ID must be a number greater than 0.`);
+  }
+  // Check if the policy ID is valid
+  const policy = getPolicy(policyId);
+  if (!policy) {
+    // TODO update this check
+    throw new Error(`Policy ID ${policyId} does not exist.`);
+  }
+  return true;
+}
 
 async function main() {
-  const rulesEngineContract: `0x${string}` = DiamondAddress;
   await connectConfig(config, 0);
-
-  if (process.argv.length > 2) {
-    const a = process.argv[2];
-    const policyNum = Number(process.argv[3]);
-    if (a == "apply") {
-      const address = process.argv[4];
-      var result = await applyPolicy(
-        policyNum,
-        getAddress(address),
-        getRulesEnginePolicyContract(rulesEngineContract, client)
-      );
-      console.log("Policy applied");
-    } else if (a == "poll") {
-      var policy = await retrieveFullPolicy(
-        policyNum,
-        [
-          {
-            hex: "0xa9059cbb",
-            functionSignature: "transfer(address to, uint256 value)",
-          },
-          { hex: "0x71308757", functionSignature: "testSig(address)" },
-        ],
-        getRulesEnginePolicyContract(rulesEngineContract, client),
-        getRulesEngineComponentContract(rulesEngineContract, client)
-      );
-      console.log(policy);
-    } else {
-      console.log("parameter not supported");
+  // Assuming a syntax of npx <run command> <args>
+  if (process.argv[2] == "setupPolicy") {
+    // setupPolicy - npx setupPolicy <OPTIONAL: policyJSONFilePath>
+    var policyJSONFile = process.argv[3];
+    if (!policyJSONFile) {
+      policyJSONFile = "policy.json";
     }
+    let policyData: string = fs.readFileSync(policyJSONFile, "utf8");
+    if (!policyData) {
+      console.error(`Policy JSON file ${policyJSONFile} does not exist.`);
+      return;
+    }
+    await setupPolicy(policyData);
+  } else if (process.argv[2] == "injectModifiers") {
+    // injectModifiers - npx injectModifiers <policyId> <sourceContractFile> <destinationModifierFile>
+    const policyId = Number(process.argv[3]);
+    validatePolicyId(policyId);
+    const sourceContractFile = process.argv[4] || "src/ExampleContract.sol";
+    if (!fs.existsSync(sourceContractFile)) {
+      console.error(`Source contract file ${sourceContractFile} does not exist.`);
+      return;
+    }
+    const destinationModifierFile = process.argv[5] || "src/modifiers.sol";
+    await injectModifiers(policyId, sourceContractFile, destinationModifierFile);
+  } else if (process.argv[2] == "applyPolicy") {
+    // applyPolicy - npx applyPolicy <policyId> <address>
+    const policyId = Number(process.argv[3]);
+    validatePolicyId(policyId);
+    const callingContractAddress = getAddress(process.argv[4]);
+    await applyPolicy(policyId, callingContractAddress);
+  } else if (process.argv[2] == "simulateTx") {
+    // THIS MAY NOT BE A GREAT IDEA
+    // testTransaction - npx simulateTx <callingContractAddress> <functionSignature> <args> <privKey>
+    const callingContractAddress = getAddress(process.argv[3]);
+    const functionSignature = process.argv[4] || "transfer(address,uint256)";
+    const args = process.argv[5] || "0x70997970C51812dc3A010C7d01b50e0d17dc79C8 9999";
+    const privateKey = process.argv[6];
+
+    // Run the test transaction
+
+    await testTransaction();
   } else {
-    var result = await createFullPolicy(
-      getRulesEnginePolicyContract(rulesEngineContract, client),
-      getRulesEngineComponentContract(rulesEngineContract, client),
-      JSON.stringify(policyJSON),
-      "src/modifiers.sol",
-      "src/ExampleContract.sol",
-      1
-    );
-    console.log("Policy Id: ", result);
+    console.log("Invalid command. Please use one of the following commands:");
+    console.log("     setupPolicy <OPTIONAL: policyJSONFilePath>");
+    console.log("     injectModifiers <policyId> <sourceContractFile> <destinationModifierFile>");
+    console.log("     applyPolicy <policyId> <address>");
+    console.log("     simulateTx <callingContractAddress> <functionSignature> <args> <privKey>");
   }
 }
 
