@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.24;
 
-import "/Users/dmulvi/projects/thrackle/rules-v2/forte-rules-engine/src/client/RulesEngineClient.sol";
+import "@thrackle-io/forte-rules-engine/src/client/RulesEngineClient.sol";
 
 /**
  * @title Rules Engine Client Custom Modifiers
