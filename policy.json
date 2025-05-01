@@ -1,5 +1,6 @@
 {
   "Policy": "Test Policy",
+  "ForeignCalls": [],
   "Trackers": [
     {
       "name": "trackerOne",
@@ -9,7 +10,7 @@
   ],
   "RulesJSON": [
     {
-      "condition": "value >= 10000",
+      "condition": "value > 10000",
       "positiveEffects": ["revert(\"Passed test\")"],
       "negativeEffects": ["revert(\"Failed test\")"],
       "functionSignature": "transfer(address to, uint256 value)",
