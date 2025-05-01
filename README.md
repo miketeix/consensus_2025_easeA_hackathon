@@ -88,7 +88,7 @@ export POLICY_ID=<policyId>
 
 ### 6. Configure and Deploy the ExampleContract
 
-The [ExampleContract](./src/ExampleContract.sol) is a blank contract that conforms to a standard ERC20 interface transfer() function. The file does not store any data. The integration of the Rules Engine occurs by adding the `checkRulesBefore(to, value)` modifier. See the [modifiers.sol](./src/modifiers.sol) contract to see the details of this modifier. Deploy the contract with the following command:
+The [ExampleContract](./src/ExampleContract.sol) is a blank contract that conforms to a standard ERC20 interface transfer() function. The file does not store any data. The integration of the Rules Engine occurs by adding the `checkRulesBefore(to, value)` modifier. See the [RulesEngineClientCustom.sol](./src/RulesEngineClientCustom.sol) contract to see the details of this modifier. Deploy the contract with the following command:
 
 ```bash
 forge script script/ExampleContract.s.sol --ffi --broadcast -vvv --non-interactive --rpc-url $RPC_URL --private-key $PRIV_KEY

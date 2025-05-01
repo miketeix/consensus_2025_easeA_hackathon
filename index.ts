@@ -1,5 +1,5 @@
 import { initializeRulesEngineConnection, createPolicy, getPolicy } from "../forte-rules-engine-sdk";
-// import { createPolicy, getPolicy } from "@thrackle-io/forte-rules-engine-sdk";
+import { createPolicy, getPolicy } from "@thrackle-io/forte-rules-engine-sdk";
 import * as fs from "fs";
 import { getConfig, connectConfig } from "@thrackle-io/forte-rules-engine-sdk/config";
 import { Address, getAddress } from "viem";
@@ -84,7 +84,7 @@ async function main() {
       console.error(`Source contract file ${sourceContractFile} does not exist.`);
       return;
     }
-    const destinationModifierFile = process.argv[5] || "src/modifiers.sol";
+    const destinationModifierFile = process.argv[5] || "src/RulesEngineClientCustom.sol";
     await injectModifiers(policyId, sourceContractFile, destinationModifierFile);
   } else if (process.argv[2] == "applyPolicy") {
     // applyPolicy - npx applyPolicy <policyId> <address>
