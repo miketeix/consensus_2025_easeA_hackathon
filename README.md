@@ -1,26 +1,27 @@
 # Forte Rules Engine Quickstart (UNDER DEVELOPMENT)
 
-This repository will guide you through using the Forte Rules Engine in a local [anvil](https://book.getfoundry.sh/anvil/) devlopment environement. Theis guide will go over:
+This repository will guide you through using the Forte Rules Engine in a local [anvil](https://book.getfoundry.sh/anvil/) devlopment environement utilizing the [Forte Rules Engine SDK](https://github.com/thrackle-io/forte-rules-engine-sdk). This guide will go over:
 
-1. Environment dependencies
+1. Environment prerequisites
 2. Building
-3. Configuring your environment
-4. Starting a local Anvil instance
+3. Starting a local Anvil instance
+4. Configuring your environment
 5. Creating a sample policy in the Rules Engine
-6. Integrating the Rules Engine into a sample contract & deploying it locally
-7. Applying the policy to the sample contract and verifying functionality
+6. Configuring and Deploying the ExampleContract
+7. Setting the Rules Engine Address in the ExampleContract
+8. Applying the policy to the sample contract and verifying functionality
 
 > **_NOTE:_** This guide was developed in a MacOS environment, some modification may be necessary to suit a Linux/Windows environment.
 
-## Environment dependencies
+## 1. Environment dependencies
 
 This guide assumes the following tools are installed and configured correctly. Please see each tool's installation instructions for more details:
 
 - [Git](https://git-scm.com/)
-- [NodeJS](https://nodejs.org/)
-- [Foundry](https://book.getfoundry.sh/getting-started/installation) (contains anvil/forge)
+- [NodeJS](https://nodejs.org/) - v20.x.x
+- [Foundry](https://book.getfoundry.sh/getting-started/installation) - v1.0.0-stable
 
-## Building
+## 2. Building
 
 Clone this repository and navigate to the repository in your local shell. To build the repository, run the following commands:
 
@@ -29,61 +30,94 @@ npm install
 forge install
 ```
 
-## Configure your local environment
-Set the following environment variables. 
-```yaml
-# local anvil RPC, change this if you're deploying to a network
-RPC_URL=http://127.0.0.1:8545
-# local anvil account private key, change to your deployer wallet key when using a live network
-PRIV_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
-# address of the rules engine within the anvil state file
-RULES_ENGINE_ADDRESS=0x0165878A594ca255338adfa4d48449f69242Eb8F
-```
+## 3. Starting a local Anvil chain
 
-## Start a local Anvil chain
+An Anvil [dumpState](https://book.getfoundry.sh/reference/anvil/) file is provided with a pre-deployed Rules Engine instance. Start the local Anvil instance in a terminal window with the following command:
 
 ```bash
 anvil --load-state anvilState.json
 ```
 
-### Setup Environment
+`Listening on 127.0.0.1:8545` should be the last thing displayed if the state file was successfuly loaded. Leave this Anvil instance running in this terminal for the rest of the quickstart. It may be restarted at any time but restarting will lose any on-chain progress you've made during the quickstart.
 
-```bash
-source .env
+## 4. Configure your local environment
+
+The .env.local environment file contains the following configurations:
+
+- **RPC_URL** - The RPC endpoint to utilize when interacting with an EVM chain. This is defaulted to a local anvil RPC that is enabled when starting anvil. This can be updated to point to any testnet/mainnet RPC if desired. See [anvil](https://book.getfoundry.sh/anvil/) for more details.
+
+```yaml+
+# local anvil RPC, change this if you're deploying to a network
+RPC_URL=http://127.0.0.1:8545
 ```
 
-### Create Policy on Rules Engine
+- **PRIV_KEY** - The private key for the account that will be performing the actions outlined in this guide. This is defaulted to a widely know default Anvil account for the purposes of this guide. It is recommended that this be updated prior to deploying to any testnet or mainnet.
 
-```bash
-npx tsx index.ts setupPolicy
+```yaml+
+# local anvil account private key, change to your deployer wallet key when using a live network
+PRIV_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
 ```
 
-### Deploy Example Contract
+- **RULES_ENGINE_ADDRESS** - The address of the deployed Rules Engine instance on the target RPC's chain. This is defaulted to the address where the Rules Engine was deployed in the anvilState.json file. For additional chain locations, please see the Forte Rules Engine docs for additional deployment locations.
+
+```yaml+
+
+# address of the rules engine within the anvil state file
+RULES_ENGINE_ADDRESS=0x0165878A594ca255338adfa4d48449f69242Eb8F
+```
+
+Once you are satisfied with the above configurations open a new terminal window (separate from the running anvil instance) and ensure the variables are exported in your local shell with the following command:
+
+```bash
+source .env.local
+```
+
+### 5. Create the sample policy in the Rules Engine
+
+To use the Rules engine, we must first create a policy. A default policy has been created within the [policy.json](./policy.json) that is tailored to work with the [ExampleContract](./src/ExampleContract.sol). To create this policy in the Rules Engine, run the following command:
+
+```bash
+npx tsx index.ts setupPolicy policy.json
+```
+
+Note the returned Policy Id and create a local environment variable to store this Id for uses in subsequent commands:
+
+```bash
+export POLICY_ID=<policyId>
+```
+
+### 6. Configure and Deploy the ExampleContract
+
+The [ExampleContract](./src/ExampleContract.sol) is a blank contract that conforms to a standard ERC20 interface transfer() function. The file does not store any data. The integration of the Rules Engine occurs by adding the `checkRulesBefore(to, value)` modifier. See the [modifiers.sol](./src/modifiers.sol) contract to see the details of this modifier. Deploy the contract with the following command:
 
 ```bash
 forge script script/ExampleContract.s.sol --ffi --broadcast -vvv --non-interactive --rpc-url $RPC_URL --private-key $PRIV_KEY
 ```
 
-Note the contract address, add it to your `.env` file and re-run the source command:
+Note the contract address, and export the address in your local terminal for subsequent testing.
 
 ```yaml
-CONTRACT_ADDRESS=0xYourContractAddress
+export CONTRACT_ADDRESS=<0xYourContractAddress>
 ```
 
-```
-source .env
-```
+### 7. Set Rules Engine Address in the ExampleContract
 
-### Set Rules Engine Address
+The ExampleContract extends the [RulesEngineClient](https://github.com/thrackle-io/forte-rules-engine/blob/main/src/client/RulesEngineClient.sol) to encapsulate storing the Rules Engine address and checks. It is recommended that all calling contracts extend this contract. This ensures calling contracts will only invoke the Rules Engine checks if the Rules Engine Address is specified. Set the Rules Engine Address in the ExampleContract via the following command:
 
 ```bash
 cast send $CONTRACT_ADDRESS "setRulesEngineAddress(address)" $RULES_ENGINE_ADDRESS --rpc-url $RPC_URL --private-key $PRIV_KEY
 ```
 
-### Apply the Policy
+To verify the address was set correct, the following commmand should return the appropriate Rules Engine Address:
 
 ```bash
-npx tsx index.ts apply 1 $CONTRACT_ADDRESS
+cast call $CONTRACT_ADDRESS "getRulesEngineAddress()(address)" --rpc-url $RPC_URL
+```
+
+### 8. Apply the Policy and Test
+
+```bash
+npx tsx index.ts applyPolicy $POLICY_ID $CONTRACT_ADDRESS
 ```
 
 ### Test Success Condition
