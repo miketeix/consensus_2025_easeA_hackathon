@@ -9,15 +9,10 @@
     "quickstart",
     "typescript"
   ],
-  "main": "index.js",
-  "directories": {
-    "lib": "lib",
-    "test": "test"
-  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "author": "Thrackle",
   "license": "UNLICENSED",
   "dependencies": {
     "@thrackle-io/forte-rules-engine": "^0.0.1-rc.0",
