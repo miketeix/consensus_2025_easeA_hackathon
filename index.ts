@@ -21,7 +21,6 @@ async function injectModifiers(policyJSONFile: string, sourceContractFile: strin
   // Create modifiers and inject them into the contract
   // const modifiers = await RULES_ENGINE.createModifiers(policyId, sourceContractFile, destinationModifierFile);
   // console.log("Modifiers created: ", modifiers); // TODO does this return anything?
-  // console.log("Modifiers created: ", modifiers); // TODO does this return anything?
 
   let policyFileContent: string = fs.readFileSync(policyJSONFile, "utf8");
   if (!policyFileContent) {
@@ -29,33 +28,25 @@ async function injectModifiers(policyJSONFile: string, sourceContractFile: strin
     return;
   }
 
-  processPolicy(policyJSONFile, [sourceContractFile]);
-  // NOTE: This is a temporary fix to get the modifiers to inject into the contract
+  // Generate the modifier files for each rule
+  // NOTE: This iterations is a temporary fix to generate the modifier files for each rule
   const policyConfig = JSON.parse(policyFileContent);
   var rulesArray = <ruleJSON[]>JSON.parse(JSON.stringify(policyConfig["RulesJSON"]));
   rulesArray.forEach((rule) => {
     generateModifier(JSON.stringify(rule), "src/RulesEngineClientCustom.sol");
   });
+  // Modify the solidity contract to inject modifier functions
+  processPolicy(policyJSONFile, [sourceContractFile]);
+
   console.log("Modifiers injected successfully.");
 }
 
 async function applyPolicy(policyId: number, callingContractAddress: Address) {
-  // validatePolicyId(policyId);
+  validatePolicyId(policyId);
 
   // Apply the policy to the contract
   const result = await RULES_ENGINE.applyPolicy(policyId, callingContractAddress);
   console.log("Policy applied. Result: ", result);
-}
-
-// Test a transaction to show the policy is not applied (expected success+failure cases)
-async function testTransaction() {
-  // Test a transaction to show the policy is not applied
-  // await simulateContract(config, {
-  //   address: RULES_ENGINE.address,
-  //   abi: RULES_ENGINE.abi,
-  //   functionName: "applyPolicy",
-  //   args: [contractAddressForPolicy, [policyId]],
-  // });
 }
 
 function validatePolicyId(policyId: number): boolean {
@@ -99,23 +90,11 @@ async function main() {
     validatePolicyId(policyId);
     const callingContractAddress = getAddress(process.argv[4]);
     await applyPolicy(policyId, callingContractAddress);
-  } else if (process.argv[2] == "simulateTx") {
-    // THIS MAY NOT BE A GREAT IDEA
-    // testTransaction - npx simulateTx <callingContractAddress> <functionSignature> <args> <privKey>
-    const callingContractAddress = getAddress(process.argv[3]);
-    const functionSignature = process.argv[4] || "transfer(address,uint256)";
-    const args = process.argv[5] || "0x70997970C51812dc3A010C7d01b50e0d17dc79C8 9999";
-    const privateKey = process.argv[6];
-
-    // Run the test transaction
-
-    await testTransaction();
   } else {
     console.log("Invalid command. Please use one of the following commands:");
     console.log("     setupPolicy <OPTIONAL: policyJSONFilePath>");
     console.log("     injectModifiers <policyId> <sourceContractFile> <destinationModifierFile>");
     console.log("     applyPolicy <policyId> <address>");
-    console.log("     simulateTx <callingContractAddress> <functionSignature> <args> <privKey>");
   }
 }
 
