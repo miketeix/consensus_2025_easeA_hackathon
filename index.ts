@@ -1,4 +1,4 @@
-import { RulesEngine, generateModifier, processPolicy } from "@thrackle-io/forte-rules-engine-sdk";
+import { RulesEngine, policyModifierGeneration } from "@thrackle-io/forte-rules-engine-sdk";
 import * as fs from "fs";
 import { getConfig, connectConfig, ruleJSON } from "@thrackle-io/forte-rules-engine-sdk/config";
 import { Address, getAddress } from "viem";
@@ -17,28 +17,8 @@ async function setupPolicy(policyData: string): Promise<number> {
   return policyId;
 }
 
-async function injectModifiers(policyJSONFile: string, sourceContractFile: string) {
-  // Create modifiers and inject them into the contract
-  // const modifiers = await RULES_ENGINE.createModifiers(policyId, sourceContractFile, destinationModifierFile);
-  // console.log("Modifiers created: ", modifiers); // TODO does this return anything?
-
-  let policyFileContent: string = fs.readFileSync(policyJSONFile, "utf8");
-  if (!policyFileContent) {
-    console.error(`Policy JSON file ${policyJSONFile} does not contain data.`);
-    return;
-  }
-
-  // Generate the modifier files for each rule
-  // NOTE: This iterations is a temporary fix to generate the modifier files for each rule
-  const policyConfig = JSON.parse(policyFileContent);
-  var rulesArray = <ruleJSON[]>JSON.parse(JSON.stringify(policyConfig["RulesJSON"]));
-  rulesArray.forEach((rule) => {
-    generateModifier(JSON.stringify(rule), "src/RulesEngineClientCustom.sol");
-  });
-  // Modify the solidity contract to inject modifier functions
-  processPolicy(policyJSONFile, [sourceContractFile]);
-
-  console.log("Modifiers injected successfully.");
+async function injectModifiers(policyJSONFile: string, modifierFileName: string, sourceContractFile: string) {
+  policyModifierGeneration(policyJSONFile, modifierFileName, [sourceContractFile]);
 }
 
 async function applyPolicy(policyId: number, callingContractAddress: Address) {
@@ -79,11 +59,12 @@ async function main() {
     }
     await setupPolicy(policyData);
   } else if (process.argv[2] == "injectModifiers") {
-    // injectModifiers - npx injectModifiers <policyJSONFilePath> <sourceContractFile>
-    // npx tsx index.ts injectModifiers policy.json src/ExampleContract.sol
-    var policyJSONFile = process.argv[3] || "policy.json";
-    const sourceContractFile = process.argv[4] || "src/ExampleContract.sol";
-    await injectModifiers(policyJSONFile, sourceContractFile);
+    // injectModifiers - npx injectModifiers <policyJSONFilePath> <newModifierFileName> <sourceContractFile>
+    // npx tsx index.ts injectModifiers policy.json src/RulesEngineIntegration src/ExampleContract.sol
+    const policyJSONFile = process.argv[3] || "policy.json";
+    const newModifierFileName = process.argv[4] || "src/RulesEngineIntegration.sol";
+    const sourceContractFile = process.argv[5] || "src/ExampleContract.sol";
+    await injectModifiers(policyJSONFile, newModifierFileName, sourceContractFile);
   } else if (process.argv[2] == "applyPolicy") {
     // applyPolicy - npx applyPolicy <policyId> <address>
     const policyId = Number(process.argv[3]);
