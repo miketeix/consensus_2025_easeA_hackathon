@@ -51,7 +51,7 @@ The .env.local environment file contains the following configurations:
 RPC_URL=http://127.0.0.1:8545
 ```
 
-- **PRIV_KEY** - The private key for the account that will be performing the actions outlined in this guide. This is defaulted to a widely know default Anvil account for the purposes of this guide. It is recommended that this be updated prior to deploying to any testnet or mainnet.
+- **PRIV_KEY** - The private key for the account that will be performing the actions outlined in this guide. This is defaulted to a widely known default Anvil account for the purposes of this guide. It is recommended that this be updated prior to deploying to any testnet or mainnet.
 
 ```yaml+
 # local anvil account private key, change to your deployer wallet key when using a live network
@@ -80,10 +80,10 @@ To use the Rules engine, we must first create a policy. A default policy has bee
 npx tsx index.ts setupPolicy policy.json
 ```
 
-Note the returned Policy Id and create a local environment variable to store this Id for uses in subsequent commands:
+Note the returned Policy Id, for this example the Policy Id should be 1, and create a local environment variable to store this Id for uses in subsequent commands:
 
 ```bash
-export POLICY_ID=<policyId>
+export POLICY_ID=1
 ```
 
 ### 6. Configure and Deploy the ExampleContract
@@ -97,7 +97,6 @@ npx tsx index.ts injectModifiers policy.json src/ExampleContract.sol
 After running this command, it will inject the beforeXXX() modifier within the function specified within the policy.json file. Verify the contract compiles and deploy the contract with the following commands:
 
 ```bash
-forge build
 forge script script/ExampleContract.s.sol --ffi --broadcast -vvv --non-interactive --rpc-url $RPC_URL --private-key $PRIV_KEY
 ```
 
