@@ -23,7 +23,19 @@ This guide assumes the following tools are installed and configured correctly. P
 
 ## 2. Building
 
-Clone this repository and navigate to the repository in your local shell. To build the repository, run the following commands:
+Create a copy of our template repository in your own github account by navigating here: https://github.com/thrackle-io/fre-quickstart and clicking the "Use this template" button on GitHub.
+
+![Screenshot showing how to copy repo as a template](https://mintlify.s3.us-west-1.amazonaws.com/thrackle/images/use-template-gh.jpg)
+
+Next, clone the freshly created repository to your local machine:
+
+```bash
+git clone https://github.com/<YOUR_GITHUB_USERNAME>/fre-quickstart
+```
+
+> **_NOTE:_** If you named the repository something different than `fre-quickstart`, use that name in the clone command instead.
+
+Navigate to the repository in your local shell. To build the repository, run the following commands:
 
 ```shell
 npm install
@@ -69,8 +81,11 @@ RULES_ENGINE_ADDRESS=0x0165878A594ca255338adfa4d48449f69242Eb8F
 Once you are satisfied with the above configurations open a new terminal window (separate from the running anvil instance) and ensure the variables are exported in your local shell with the following command:
 
 ```bash
-source .env.local
+cp .env.sample .env
+source .env
 ```
+
+> **_WARNING:_** The SDK utilizes the Rules Engine address and private key values from the environment file. This requires that you name your file `.env`, which enables the SDK to access the values.
 
 ### 5. Create the sample policy in the Rules Engine
 
