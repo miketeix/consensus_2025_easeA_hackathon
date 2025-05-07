@@ -1,20 +1,58 @@
 import { RulesEngine, policyModifierGeneration } from "@thrackle-io/forte-rules-engine-sdk";
 import * as fs from "fs";
-import { getConfig, connectConfig, ruleJSON } from "@thrackle-io/forte-rules-engine-sdk/config";
-import { Address, getAddress } from "viem";
-import { simulateContract } from "@wagmi/core";
+import { connectConfig } from "@thrackle-io/forte-rules-engine-sdk/config";
+import { Address, createTestClient, getAddress, http, PrivateKeyAccount, publicActions, walletActions } from "viem";
+import { privateKeyToAccount } from 'viem/accounts'
+import { Config, createConfig, mock, simulateContract } from "@wagmi/core";
+import { foundry } from "@wagmi/core/chains";
 
 // Hardcoded address of the diamond in diamondDeployedAnvilState.json
 const RULES_ENGINE_ADDRESS: Address = getAddress(`0x0165878A594ca255338adfa4d48449f69242Eb8F`);
-const config = getConfig();
-const client = config.getClient({ chainId: config.chains[0].id });
-const RULES_ENGINE = new RulesEngine(RULES_ENGINE_ADDRESS, client);
+var config: Config
+var RULES_ENGINE: RulesEngine
+
+/**  
+ * The following address and private key are defaults from anvil and are only meant to be used in a test environment.
+ */
+//-------------------------------------------------------------------------------------------------------------
+const foundryPrivateKey: `0x${string}` = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
+export const account: PrivateKeyAccount = privateKeyToAccount(foundryPrivateKey)
+const foundryAccountAddress: `0x${string}` = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'
+export const DiamondAddress: `0x${string}` = `0x0165878A594ca255338adfa4d48449f69242Eb8F`
+//-------------------------------------------------------------------------------------------------------------
+
+/**
+ * Creates a connection to the local anvil instance.
+ * Separate configs will need to be created to communicate with different chains
+ */
+const createTestConfig = async() => {
+  config = createConfig({
+      chains: [foundry],
+      client({ chain }) { 
+        return createTestClient(
+          { 
+            chain,
+            transport: http('http://127.0.0.1:8545'),
+            mode: 'anvil',
+            account
+          }
+        ).extend(walletActions).extend(publicActions)
+      }, 
+      connectors: [
+          mock({
+              accounts: [
+                foundryAccountAddress
+              ]
+          })
+      ]
+  })
+}
 
 async function setupPolicy(policyData: string): Promise<number> {
   // Create a new policy
-  const policyId: number = await RULES_ENGINE.createPolicy(policyData);
-  console.log(`Policy \'${policyId}\' created successfully.`);
-  return policyId;
+  const result = await RULES_ENGINE.createPolicy(policyData);
+  console.log(`Policy \'${result.policyId}\' created successfully.`);
+  return result.policyId;
 }
 
 async function injectModifiers(policyJSONFile: string, modifierFileName: string, sourceContractFile: string) {
@@ -22,28 +60,31 @@ async function injectModifiers(policyJSONFile: string, modifierFileName: string,
 }
 
 async function applyPolicy(policyId: number, callingContractAddress: Address) {
-  validatePolicyId(policyId);
+  await validatePolicyId(policyId);
 
   // Apply the policy to the contract
   const result = await RULES_ENGINE.applyPolicy(policyId, callingContractAddress);
   console.log("Policy applied. Result: ", result);
 }
 
-function validatePolicyId(policyId: number): boolean {
+async function validatePolicyId(policyId: number): Promise<boolean> {
   // Check if the policy ID is a valid number
   if (isNaN(policyId) || policyId <= 0) {
     throw new Error(`Invalid policy ID: ${policyId}. The policy ID must be a number greater than 0.`);
   }
   // Check if the policy ID is valid
-  // const policy = RULES_ENGINE.getPolicy(policyId);
-  // if (!policy) {
-  //   // TODO update this check
-  //   throw new Error(`Policy ID ${policyId} does not exist.`);
-  // }
+  const policy = await RULES_ENGINE.policyExists(policyId)
+  if (!policy) {
+    // TODO update this check
+    throw new Error(`Policy ID ${policyId} does not exist.`);
+  }
   return true;
 }
 
 async function main() {
+  await createTestConfig()
+  var client = config.getClient({ chainId: config.chains[0].id });
+  RULES_ENGINE = new RulesEngine(RULES_ENGINE_ADDRESS, config, client);
   await connectConfig(config, 0);
   // Assuming a syntax of npx <run command> <args>
   if (process.argv[2] == "setupPolicy") {
@@ -68,7 +109,7 @@ async function main() {
   } else if (process.argv[2] == "applyPolicy") {
     // applyPolicy - npx applyPolicy <policyId> <address>
     const policyId = Number(process.argv[3]);
-    validatePolicyId(policyId);
+    await validatePolicyId(policyId);
     const callingContractAddress = getAddress(process.argv[4]);
     await applyPolicy(policyId, callingContractAddress);
   } else {
