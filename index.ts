@@ -1,13 +1,15 @@
 import { RulesEngine, policyModifierGeneration } from "@thrackle-io/forte-rules-engine-sdk";
 import * as fs from "fs";
 import { connectConfig } from "@thrackle-io/forte-rules-engine-sdk/config";
-import { Address, createTestClient, getAddress, http, PrivateKeyAccount, publicActions, walletActions } from "viem";
+import { Address, createClient, createTestClient, getAddress, http, PrivateKeyAccount, publicActions, walletActions } from "viem";
 import { privateKeyToAccount } from 'viem/accounts'
 import { Config, createConfig, mock, simulateContract } from "@wagmi/core";
-import { foundry } from "@wagmi/core/chains";
+import { baseSepolia, foundry } from "@wagmi/core/chains";
+import * as dotenv from 'dotenv'
 
+dotenv.config()
 // Hardcoded address of the diamond in diamondDeployedAnvilState.json
-const RULES_ENGINE_ADDRESS: Address = getAddress(`0x0165878A594ca255338adfa4d48449f69242Eb8F`);
+const RULES_ENGINE_ADDRESS: Address = getAddress(process.env.RULES_ENGINE_ADDRESS as string);
 var config: Config
 var RULES_ENGINE: RulesEngine
 
@@ -15,10 +17,9 @@ var RULES_ENGINE: RulesEngine
  * The following address and private key are defaults from anvil and are only meant to be used in a test environment.
  */
 //-------------------------------------------------------------------------------------------------------------
-const foundryPrivateKey: `0x${string}` = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
+const foundryPrivateKey: `0x${string}` = process.env.PRIV_KEY as `0x${string}`
 export const account: PrivateKeyAccount = privateKeyToAccount(foundryPrivateKey)
-const foundryAccountAddress: `0x${string}` = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'
-export const DiamondAddress: `0x${string}` = `0x0165878A594ca255338adfa4d48449f69242Eb8F`
+const foundryAccountAddress: `0x${string}` = process.env.USER_ADDRESS as `0x${string}`
 //-------------------------------------------------------------------------------------------------------------
 
 /**
@@ -27,13 +28,12 @@ export const DiamondAddress: `0x${string}` = `0x0165878A594ca255338adfa4d48449f6
  */
 const createTestConfig = async() => {
   config = createConfig({
-      chains: [foundry],
+      chains: [process.env.LOCAL_CHAIN == "TRUE" ? foundry : baseSepolia],
       client({ chain }) { 
-        return createTestClient(
+        return createClient(
           { 
             chain,
-            transport: http('http://127.0.0.1:8545'),
-            mode: 'anvil',
+            transport: http(process.env.RPC_URL),
             account
           }
         ).extend(walletActions).extend(publicActions)
@@ -47,6 +47,7 @@ const createTestConfig = async() => {
       ]
   })
 }
+
 
 async function setupPolicy(policyData: string): Promise<number> {
   // Create a new policy
