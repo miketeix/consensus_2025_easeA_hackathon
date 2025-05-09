@@ -70,7 +70,7 @@ async function applyPolicy(policyId: number, callingContractAddress: Address) {
   await validatePolicyId(policyId);
 
   // Apply the policy to the contract
-  await RULES_ENGINE.applyPolicy(policyId, callingContractAddress);
+  await RULES_ENGINE.appendPolicy(policyId, callingContractAddress);
   console.log("Policy applied!");
 }
 
