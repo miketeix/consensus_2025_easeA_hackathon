@@ -1,3 +1,1 @@
 @thrackle-io/forte-rules-engine/=node_modules/@thrackle-io/forte-rules-engine
-@openzeppelin/=node_modules/@openzeppelin/
-@uniswap/v4-core/=node_modules/@uniswap/v4-core/

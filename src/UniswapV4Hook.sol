@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {IPoolManager} from "@uniswap/v4-core/contracts/interfaces/IPoolManager.sol";
-import {PoolKey} from "@uniswap/v4-core/contracts/types/PoolKey.sol";
-import {PoolId, PoolIdLibrary} from "@uniswap/v4-core/contracts/types/PoolId.sol";
-import {BalanceDelta} from "@uniswap/v4-core/contracts/types/BalanceDelta.sol";
-import {IHooks} from "@uniswap/v4-core/contracts/interfaces/IHooks.sol";
+import {IPoolManager, ModifyLiquidityParams, SwapParams} from "../lib/v4-core/src/interfaces/IPoolManager.sol";
+import {PoolKey} from "../lib/v4-core/src/types/PoolKey.sol";
+import {PoolId, PoolIdLibrary} from "../lib/v4-core/src/types/PoolId.sol";
+import {BalanceDelta} from "../lib/v4-core/src/types/BalanceDelta.sol";
+import {IHooks} from "../lib/v4-core/src/interfaces/IHooks.sol";
+import {BeforeSwapDelta} from "../lib/v4-core/src/types/BeforeSwapDelta.sol";
 
-contract UniswapV4Hook is IHooks {
+abstract contract UniswapV4Hook is IHooks {
     using PoolIdLibrary for PoolKey;
 
     IPoolManager public immutable poolManager;
@@ -16,88 +17,90 @@ contract UniswapV4Hook is IHooks {
         poolManager = _poolManager;
     }
 
-    function beforeInitialize(address, PoolKey calldata, uint160, bytes calldata) external pure returns (bytes4) {
-        return this.beforeInitialize.selector;
+    function beforeInitialize(address sender, PoolKey calldata key, uint160 sqrtPriceX96) external returns (bytes4) {
+        return IHooks.beforeInitialize.selector;
     }
 
-    function afterInitialize(address, PoolKey calldata, uint160, uint128, bytes calldata) external pure returns (bytes4) {
-        return this.afterInitialize.selector;
+    function afterInitialize(address sender, PoolKey calldata key, uint160 sqrtPriceX96, int24 tick) external returns (bytes4) {
+        return IHooks.afterInitialize.selector;
     }
 
     function beforeAddLiquidity(
-        address,
-        PoolKey calldata,
-        IPoolManager.ModifyLiquidityParams calldata,
-        bytes calldata
-    ) external pure returns (bytes4) {
-        return this.beforeAddLiquidity.selector;
+        address sender,
+        PoolKey calldata key,
+        ModifyLiquidityParams calldata params,
+        bytes calldata hookData
+    ) external returns (bytes4) {
+        return IHooks.beforeAddLiquidity.selector;
     }
 
     function afterAddLiquidity(
-        address,
-        PoolKey calldata,
-        IPoolManager.ModifyLiquidityParams calldata,
-        BalanceDelta,
-        bytes calldata
-    ) external pure returns (bytes4) {
-        return this.afterAddLiquidity.selector;
+        address sender,
+        PoolKey calldata key,
+        ModifyLiquidityParams calldata params,
+        BalanceDelta delta,
+        BalanceDelta feesAccrued,
+        bytes calldata hookData
+    ) external returns (bytes4, BalanceDelta) {
+        return (IHooks.afterAddLiquidity.selector, BalanceDelta.wrap(0));
     }
 
     function beforeRemoveLiquidity(
-        address,
-        PoolKey calldata,
-        IPoolManager.ModifyLiquidityParams calldata,
-        bytes calldata
-    ) external pure returns (bytes4) {
-        return this.beforeRemoveLiquidity.selector;
+        address sender,
+        PoolKey calldata key,
+        ModifyLiquidityParams calldata params,
+        bytes calldata hookData
+    ) external returns (bytes4) {
+        return IHooks.beforeRemoveLiquidity.selector;
     }
 
     function afterRemoveLiquidity(
-        address,
-        PoolKey calldata,
-        IPoolManager.ModifyLiquidityParams calldata,
-        BalanceDelta,
-        bytes calldata
-    ) external pure returns (bytes4) {
-        return this.afterRemoveLiquidity.selector;
+        address sender,
+        PoolKey calldata key,
+        ModifyLiquidityParams calldata params,
+        BalanceDelta delta,
+        BalanceDelta feesAccrued,
+        bytes calldata hookData
+    ) external returns (bytes4, BalanceDelta) {
+        return (IHooks.afterRemoveLiquidity.selector, BalanceDelta.wrap(0));
     }
 
     function beforeSwap(
-        address,
-        PoolKey calldata,
-        IPoolManager.SwapParams calldata,
-        bytes calldata
-    ) external pure returns (bytes4) {
-        return this.beforeSwap.selector;
+        address sender,
+        PoolKey calldata key,
+        SwapParams calldata params,
+        bytes calldata hookData
+    ) external returns (bytes4, BeforeSwapDelta, uint24) {
+        return (IHooks.beforeSwap.selector, BeforeSwapDelta.wrap(0), 0);
     }
 
     function afterSwap(
-        address,
-        PoolKey calldata,
-        IPoolManager.SwapParams calldata,
-        BalanceDelta,
-        bytes calldata
-    ) external pure returns (bytes4) {
-        return this.afterSwap.selector;
+        address sender,
+        PoolKey calldata key,
+        SwapParams calldata params,
+        BalanceDelta delta,
+        bytes calldata hookData
+    ) external returns (bytes4, int128) {
+        return (IHooks.afterSwap.selector, 0);
     }
 
     function beforeDonate(
-        address,
-        PoolKey calldata,
-        uint256,
-        uint256,
-        bytes calldata
-    ) external pure returns (bytes4) {
-        return this.beforeDonate.selector;
+        address sender,
+        PoolKey calldata key,
+        uint256 amount0,
+        uint256 amount1,
+        bytes calldata hookData
+    ) external returns (bytes4) {
+        return IHooks.beforeDonate.selector;
     }
 
     function afterDonate(
-        address,
-        PoolKey calldata,
-        uint256,
-        uint256,
-        bytes calldata
-    ) external pure returns (bytes4) {
-        return this.afterDonate.selector;
+        address sender,
+        PoolKey calldata key,
+        uint256 amount0,
+        uint256 amount1,
+        bytes calldata hookData
+    ) external returns (bytes4) {
+        return IHooks.afterDonate.selector;
     }
 }
