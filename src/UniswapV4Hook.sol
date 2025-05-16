@@ -7,8 +7,11 @@ import {PoolId, PoolIdLibrary} from "../lib/v4-core/src/types/PoolId.sol";
 import {BalanceDelta} from "../lib/v4-core/src/types/BalanceDelta.sol";
 import {IHooks} from "../lib/v4-core/src/interfaces/IHooks.sol";
 import {BeforeSwapDelta} from "../lib/v4-core/src/types/BeforeSwapDelta.sol";
+import "../lib/thrackle-io/forte-rules-engine/src/client/RulesEngineClient.sol";
 
-abstract contract UniswapV4Hook is IHooks {
+
+abstract contract UniswapV4Hook is IHooks, RulesEngineClient {  
+    bytes4 public constant SWAP_FUNC_ID =  bytes4(keccak256(abi.encode("swap()")));
     using PoolIdLibrary for PoolKey;
 
     IPoolManager public immutable poolManager;
@@ -71,9 +74,9 @@ abstract contract UniswapV4Hook is IHooks {
         SwapParams calldata params,
         bytes calldata hookData
     ) external returns (bytes4, BeforeSwapDelta, uint24) {
+        _invokeRulesEngine(abi.encodeWithSelector(SWAP_FUNC_ID, sender, params.zeroForOne, params.amountSpecified));
         return (IHooks.beforeSwap.selector, BeforeSwapDelta.wrap(0), 0);
     }
-
     function afterSwap(
         address sender,
         PoolKey calldata key,

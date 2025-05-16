@@ -10,11 +10,26 @@
   ],
   "RulesJSON": [
     {
-      "condition": "value > 10000",
+      "condition": "finalAmount < 10000000 OR to == whiteListedDexPoolAddress ",
       "positiveEffects": ["emit TransferSuccessful"],
-      "negativeEffects": ["revert(\"Transfer Failed\")"],
-      "functionSignature": "transfer(address to, uint256 value)",
-      "encodedValues": "address to, uint256 value"
+      "negativeEffects": ["revert(\"Transfer Failed: final balance over 1 million or sent to non whitelisted dex\")"],
+      "functionSignature": "transfer(address to, uint256 amount)",
+      "encodedValues": "address to, uint256 finalAmount, address whiteListedDexPoolAddress"
+    },
+    {
+      "condition": "amount < 10000",
+      "positiveEffects": ["emit SwapAllowed"],
+      "negativeEffects": ["revert(\"Swap Failed: max swap is 10000\")"],
+      "functionSignature": "function swap()",
+      "encodedValues": "address sender, bool zeroForOne, int256 amount"
+    },
+    {
+      "condition": "currentTime < airdropEndTime AND currentTime > airdropStartTime",
+      "positiveEffects": ["emit WithinAirdropWindow"],
+      "negativeEffects": ["revert(\"Claim Failed: outside of airdrop window\")"],
+      "functionSignature": "claim(uint256 amount, bytes32[] calldata merkleProof)",
+      "encodedValues": "uint256 currentTime , uint256 airdropStartTime, uint256 airdropStartTime"
     }
+    
   ]
 }
