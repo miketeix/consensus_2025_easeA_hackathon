@@ -1,3 +1,7 @@
+# For local frontend
+- run `npm run dev`from inside `/frontend` folder
+
+
 # Forte Rules Engine Quickstart (UNDER DEVELOPMENT)
 
 This repository will guide you through using the Forte Rules Engine in a local [anvil](https://book.getfoundry.sh/anvil/) devlopment environement utilizing the [Forte Rules Engine SDK](https://github.com/thrackle-io/forte-rules-engine-sdk). This guide will go over:
